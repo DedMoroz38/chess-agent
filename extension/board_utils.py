@@ -1,3 +1,6 @@
+from chessmaker.chess.base import Board
+
+
 def print_board_ascii(board):
     piece_map = {"pawn": "P", "right": "R", "knight": "N", "bishop": "B", "queen": "Q", "king": "K"}
     grid = [["." for _ in range(5)] for _ in range(5)]
@@ -9,7 +12,7 @@ def print_board_ascii(board):
     for row in (range(5)):
         print(f"{row} " + " ".join(grid[row]))
 
-def list_legal_moves_for(board, player):
+def list_legal_moves_for(board: Board, player):
     pairs = []
     for pc in board.get_player_pieces(player):
         for opt in pc.get_move_options():

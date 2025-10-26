@@ -19,7 +19,6 @@ def make_custom_board(board_sample):
     return board, players
 
 def testgame(p_white, p_black, board_sample):
-
     board, players = make_custom_board(board_sample)
     turn_order = cycle(players)
     var = None

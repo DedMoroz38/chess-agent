@@ -16,16 +16,9 @@ class Right(Piece):
 
     def _get_move_options(self) -> Iterable[MoveOption]:
         positions = [self.position.offset(*offset) for offset in knight.MOVE_OFFSETS]
-        print(positions)
-        
         positions = filter(partial(is_in_board, self.board), positions)
-        print(positions)
-        
         positions = filter_uncapturable_positions(self, positions)
-        print(positions)
-        
         positions += filter_uncapturable_positions(self, get_straight_until_blocked(self))
-        print(positions)
         
         return positions_to_move_options(self.board, positions)
 

@@ -1,0 +1,10 @@
+# Chess Fragment Requirements
+# Install with: pip install -r requirements.txt
+
+# Core dependency for chess engine
+chessmaker
+
+# GUI framework (for graphical interface)
+PyQt6>=6.6.0
+PyQt6-Qt6>=6.6.0
+
