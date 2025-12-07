@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import inf
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 from extension.board_rules import get_result
 from extension.board_utils import copy_piece_move, list_legal_moves_for
@@ -92,14 +92,17 @@ class AlphaBetaAgent:
     def __init__(self, max_depth: int = 4, evaluator: Optional[BoardEvaluator] = None):
         self.max_depth = max_depth
         self.evaluator = evaluator or BoardEvaluator()
+        self.reset_stats()
 
     def choose(self, board, player):
+        self.reset_stats()
         board.current_player = player
         moves = list_legal_moves_for(board, player)
         if not moves:
             return None, None
 
-        depth = self._adaptive_depth(board, len(moves))
+        depth_limit = self._adaptive_depth(board, len(moves))
+        self.last_depth_limit = depth_limit
         ordered = self._order_moves(moves)
 
         alpha, beta = -inf, inf
@@ -111,7 +114,17 @@ class AlphaBetaAgent:
             if child is None:
                 continue
             next_player = self._next_player(child, player)
-            score = self._search(child, depth - 1, player, next_player, False, alpha, beta)
+            score = self._search(
+                child,
+                depth_limit - 1,
+                player,
+                next_player,
+                False,
+                alpha,
+                beta,
+                depth_limit,
+                1,
+            )
             if score > best_score:
                 best_score = score
                 best_move = (piece, move)
@@ -121,7 +134,9 @@ class AlphaBetaAgent:
 
         return best_move
 
-    def _search(self, board, depth, maximizing_player, current_player, is_maximizing, alpha, beta):
+    def _search(self, board, depth, maximizing_player, current_player, is_maximizing, alpha, beta, depth_limit, current_depth):
+        self.nodes_explored += 1
+        self.max_depth_reached = max(self.max_depth_reached, current_depth)
         board.current_player = current_player
         terminal = self.evaluator.terminal_score(board, maximizing_player, depth)
         if terminal is not None:
@@ -142,10 +157,21 @@ class AlphaBetaAgent:
                 if child is None:
                     continue
                 next_player = self._next_player(child, current_player)
-                score = self._search(child, depth - 1, maximizing_player, next_player, False, alpha, beta)
+                score = self._search(
+                    child,
+                    depth - 1,
+                    maximizing_player,
+                    next_player,
+                    False,
+                    alpha,
+                    beta,
+                    depth_limit,
+                    current_depth + 1,
+                )
                 value = max(value, score)
                 alpha = max(alpha, value)
                 if beta <= alpha:
+                    self.beta_cutoffs += 1
                     break
             return value
 
@@ -155,10 +181,21 @@ class AlphaBetaAgent:
             if child is None:
                 continue
             next_player = self._next_player(child, current_player)
-            score = self._search(child, depth - 1, maximizing_player, next_player, True, alpha, beta)
+            score = self._search(
+                child,
+                depth - 1,
+                maximizing_player,
+                next_player,
+                True,
+                alpha,
+                beta,
+                depth_limit,
+                current_depth + 1,
+            )
             value = min(value, score)
             beta = min(beta, value)
             if beta <= alpha:
+                self.alpha_cutoffs += 1
                 break
         return value
 
@@ -193,9 +230,40 @@ class AlphaBetaAgent:
             return self.max_depth
         return max(2, self.max_depth - 1)
 
+    def reset_stats(self):
+        self.nodes_explored = 0
+        self.alpha_cutoffs = 0
+        self.beta_cutoffs = 0
+        self.max_depth_reached = 0
+        self.last_depth_limit = self.max_depth
+
+    def get_search_statistics(self) -> Dict[str, int]:
+        return {
+            "nodes_explored": self.nodes_explored,
+            "alpha_cutoffs": self.alpha_cutoffs,
+            "beta_cutoffs": self.beta_cutoffs,
+            "max_depth_reached": self.max_depth_reached,
+            "depth_limit": self.last_depth_limit,
+        }
+
 
 SEARCH_AGENT = AlphaBetaAgent()
+_AGENT_CACHE: Dict[int, AlphaBetaAgent] = {}
+
+
+def _select_agent(var) -> AlphaBetaAgent:
+    if isinstance(var, dict):
+        depth = var.get("depth") or var.get("max_depth")
+        if depth is not None:
+            depth_int = int(depth)
+            cached = _AGENT_CACHE.get(depth_int)
+            if cached is None:
+                cached = AlphaBetaAgent(max_depth=depth_int)
+                _AGENT_CACHE[depth_int] = cached
+            return cached
+    return SEARCH_AGENT
 
 
 def agent(board, player, var=None):
-    return SEARCH_AGENT.choose(board, player)
+    search_agent = _select_agent(var)
+    return search_agent.choose(board, player)
