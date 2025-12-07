@@ -4,7 +4,7 @@ from chessmaker.chess.base import Board
 from extension.board_utils import copy_piece_move
 from extension.board_rules import get_result
 from samples import white, black, sample0
-from agents.agent_minimax_ab import agent
+from agents.agent_minimax_ab_tt_no_test import agent
 
 
 class AIWorker(QThread):
