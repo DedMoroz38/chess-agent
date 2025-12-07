@@ -113,6 +113,9 @@ class EfficiencyTester:
 
         for wrapper in self.agent_wrappers:
             for pos in suite:
+                print(
+                    f"[{datetime.utcnow().isoformat()}] Position test: {wrapper.agent_name} on {pos.get('name','position')}..."
+                )
                 wrapper.reset()
                 board = pos["board"].clone() if hasattr(pos["board"], "clone") else pos["board"]
                 player = pos["player"]
@@ -137,18 +140,34 @@ class EfficiencyTester:
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
         rows: List[Dict] = []
         game_index = 0
+        total_matches = len(self.agent_wrappers) * max(len(self.agent_wrappers) - 1, 0) * games_per_matchup
+        match_counter = 0
 
         for white_idx, white_agent in enumerate(self.agent_wrappers):
             for black_idx, black_agent in enumerate(self.agent_wrappers):
                 if white_idx == black_idx:
                     continue
                 for _ in range(games_per_matchup):
+                    match_counter += 1
+                    start = time.perf_counter()
+                    print(
+                        f"[{datetime.utcnow().isoformat()}] Match {match_counter}/{total_matches}: "
+                        f"{white_agent.agent_name} (white) vs {black_agent.agent_name} (black)"
+                    )
                     row = self._play_game(
                         white_agent=white_agent,
                         black_agent=black_agent,
                         game_index=game_index,
                         max_moves=max_moves,
                         timestamp=timestamp,
+                    )
+                    duration = time.perf_counter() - start
+                    print(
+                        f" -> Winner: {row.get('winner')} | Result: {row.get('result')} | Moves: {row.get('moves_played')} | "
+                        f"Duration: {duration:.2f}s | "
+                        f"Avg time (W/B): {row.get('white_avg_thinking_time', 0):.4f}s / "
+                        f"{row.get('black_avg_thinking_time', 0):.4f}s | "
+                        f"Avg nodes (W/B): {row.get('white_avg_nodes', 0):.1f} / {row.get('black_avg_nodes', 0):.1f}"
                     )
                     rows.append(row)
                     game_index += 1

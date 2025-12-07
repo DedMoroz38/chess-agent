@@ -19,7 +19,7 @@ def main():
     tester = EfficiencyTester(scenarios=TestScenarios())
 
     # Register parameterised minimax/alpha-beta agents.
-    for depth in (3, 4):
+    for depth in (1, 2):
         move_fn, metrics_fn = _build_minimax(depth)
         tester.register_agent(
             f"Minimax_AB_depth{depth}",
@@ -28,14 +28,13 @@ def main():
             metrics_hook=metrics_fn,
         )
 
-    # Baseline greedy and random agents.
-    tester.register_agent("OnePly_Greedy", one_ply_agent)
-    tester.register_agent("Random_Baseline", random_agent)
+    # tester.register_agent("OnePly_Greedy", one_ply_agent)
+    # tester.register_agent("Random_Baseline", random_agent)
 
-    position_csv = tester.run_position_suite()
-    games_csv = tester.run_games(games_per_matchup=1, max_moves=60)
+    # position_csv = tester.run_position_suite()
+    games_csv = tester.run_games(games_per_matchup=1, max_moves=10)
 
-    print(f"Wrote position metrics to {position_csv}")
+    # print(f"Wrote position metrics to {position_csv}")
     print(f"Wrote game metrics to {games_csv}")
 
 
