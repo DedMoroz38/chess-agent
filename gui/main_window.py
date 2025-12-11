@@ -20,7 +20,7 @@ class ChessMainWindow(QMainWindow):
         self.connect_signals()
         
         # Start new game automatically
-        self.controller.start_new_game(sample0, white_is_human=True)
+        self.controller.start_new_game(sample0)
         
     def setup_ui(self):
         """Create the user interface"""
@@ -48,9 +48,8 @@ class ChessMainWindow(QMainWindow):
         self.board_widget = BoardWidget()
         board_container.addWidget(self.board_widget)
         
-        # New game button
-        new_game_btn = QPushButton("New Game")
-        new_game_btn.setStyleSheet("""
+        # Button style
+        button_style = """
             QPushButton {
                 background-color: #4A4A4A;
                 color: white;
@@ -58,7 +57,7 @@ class ChessMainWindow(QMainWindow):
                 border-radius: 4px;
                 padding: 8px 16px;
                 font-size: 14px;
-                margin: 10px;
+                margin: 5px;
             }
             QPushButton:hover {
                 background-color: #5A5A5A;
@@ -66,7 +65,11 @@ class ChessMainWindow(QMainWindow):
             QPushButton:pressed {
                 background-color: #3A3A3A;
             }
-        """)
+        """
+        
+        # New game button
+        new_game_btn = QPushButton("New Game")
+        new_game_btn.setStyleSheet(button_style)
         new_game_btn.clicked.connect(self.new_game)
         board_container.addWidget(new_game_btn)
         
@@ -194,6 +197,10 @@ class ChessMainWindow(QMainWindow):
         # Clear history
         self.move_history.clear_history()
         
-        # Start new game
-        self.controller.start_new_game(sample0, white_is_human=True)
-
+        # Clear board selection
+        self.board_widget.selected_piece = None
+        self.board_widget.selected_position = None
+        self.board_widget.clear_highlights()
+        
+        # Start new game with settings from controller's __init__
+        self.controller.start_new_game(sample0)

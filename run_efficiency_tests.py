@@ -19,7 +19,7 @@ def main():
     tester = EfficiencyTester(scenarios=TestScenarios())
 
     # Register parameterised minimax/alpha-beta agents.
-    for depth in (1, 2):
+    for depth in (6, 10):
         move_fn, metrics_fn = _build_minimax(depth)
         tester.register_agent(
             f"Minimax_AB_depth{depth}",

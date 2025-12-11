@@ -4,7 +4,7 @@ from chessmaker.chess.base import Board
 from extension.board_utils import copy_piece_move
 from extension.board_rules import get_result
 from samples import white, black, sample0
-from agents.agent_minimax_ab_tt_no_test import agent
+from agents.agent_minimax_ab_tt_submission import agent
 
 
 class AIWorker(QThread):
@@ -37,14 +37,14 @@ class GameController(QObject):
         self.players = None
         self.turn_order = None
         self.move_history = []
-        self.white_player = None  # Human
-        self.black_player = agent  # AI
+        self.white_player = agent  # None = Human, agent = AI
+        self.black_player = None  # None = Human, agent = AI
         self.ai_thread = None
         self.game_active = False
         self.move_count = 0
         
-    def start_new_game(self, board_sample=sample0, white_is_human=True):
-        """Initialize a new game"""
+    def start_new_game(self, board_sample=sample0):
+        """Initialize a new game using the white_player/black_player settings from __init__"""
         # Create board using same method as test.py
         players = [white, black]
         self.board = Board(
@@ -54,14 +54,21 @@ class GameController(QObject):
         )
         self.players = players
         self.turn_order = cycle(players)
-        self.white_player = None if white_is_human else agent
+        # Use the white_player/black_player already set in __init__
         self.move_history = []
         self.game_active = True
         self.move_count = 0
         
         # Emit initial board state
         self.board_updated.emit(self.board)
-        self.status_changed.emit("White to move (Human)")
+        
+        # Determine player type for status
+        white_type = "Human" if self.white_player is None else "AI"
+        self.status_changed.emit(f"White to move ({white_type})")
+        
+        # If white is AI, trigger AI move
+        if self.white_player is not None:
+            self.make_ai_move()
         
     def get_current_player(self):
         """Get the current player from board state"""
@@ -74,8 +81,11 @@ class GameController(QObject):
         current = self.get_current_player()
         if not current:
             return False
-        # White is human if white_player is None, black is always AI
-        return (current.name == "white" and self.white_player is None)
+        # Check if current player is human (player is None means human)
+        if current.name == "white":
+            return self.white_player is None
+        else:  # black
+            return self.black_player is None
     
     def execute_move(self, piece, move_option):
         """Execute a move on the board"""
